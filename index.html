@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Отклик.Про — Обработка входящих заявок для бизнеса</title>
+<meta content="#F7F8F5" name="theme-color"/>
+<meta content="website" property="og:type"/>
+<meta content="ru_RU" property="og:locale"/>
+<meta content="Отклик.Про — обработка входящих обращений" property="og:title"/>
+<meta content="Настройка обработки входящих обращений по правилам вашего бизнеса." property="og:description"/>
+<meta content="summary" name="twitter:card"/>
+<meta content="Настраиваем обработку входящих обращений: ответы по вашим услугам и прайсу, уточнение деталей и передача контактов в Telegram или CRM. Авито, Telegram, ВКонтакте и WhatsApp." name="description"/>
+<!-- Типографика: Cormorant Garamond (редакционные заголовки и логотип) + Inter (чистый интерфейс) -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Manrope', 'system-ui', '-apple-system', 'sans-serif'],
+            serif: ['"Lora"', 'Georgia', 'serif'],
+          },
+          colors: {
+            paper: '#F5F2EB',
+            paperAlt: '#ECE7DC',
+            paperCard: '#FAF8F4',
+            ink: '#1C211E',
+            inkMuted: '#5C635D',
+            line: '#DDD7CA',
+            forest: '#142620',
+            forestSoft: '#1D352D',
+            forestLine: '#2E4A40',
+            terra: '#C75632',
+            terraDark: '#AA4424',
+            sage: '#3D6B59',
+          },
+        },
+      },
+    };
+  </script>
+<!-- Единая чистая система стилей без конфликтующих переопределений -->
+<style>
+    :root {
+      color-scheme: light;
+    }
+
+    body {
+      background-color: #F5F2EB;
+      color: #1C211E;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Плавный бесшовный переход из светлого льна в глубокий хвойный */
+    .paper-to-forest {
+      background: linear-gradient(180deg, #F5F2EB 0%, #DFD9CC 28%, #283D35 72%, #142620 100%);
+    }
+
+    /* Аккуратный скроллбар внутри чата */
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(245, 242, 235, 0.22);
+      border-radius: 9999px;
+    }
+
+    /* Анимация кастомных выпадающих списков */
+    .dropdown-menu {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.98);
+      pointer-events: none;
+      transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transform-origin: top center;
+    }
+    .custom-dropdown[data-open="true"] .dropdown-menu {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+    .custom-dropdown[data-open="true"] .dropdown-chevron {
+      transform: rotate(180deg);
+    }
+    .custom-dropdown[data-open="true"] .dropdown-option {
+      animation: optionFade 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .custom-dropdown[data-open="true"] .dropdown-option:nth-child(1) { animation-delay: 0.02s; }
+    .custom-dropdown[data-open="true"] .dropdown-option:nth-child(2) { animation-delay: 0.05s; }
+    .custom-dropdown[data-open="true"] .dropdown-option:nth-child(3) { animation-delay: 0.08s; }
+    .custom-dropdown[data-open="true"] .dropdown-option:nth-child(4) { animation-delay: 0.11s; }
+
+    @keyframes optionFade {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Индикатор набора текста */
+    @keyframes dotPulse {
+      0%, 80%, 100% { transform: scale(0.75); opacity: 0.35; }
+      40% { transform: scale(1.1); opacity: 1; }
+    }
+    .dot-pulse-1 { animation: dotPulse 1.2s infinite; }
+    .dot-pulse-2 { animation: dotPulse 1.2s 0.18s infinite; }
+    .dot-pulse-3 { animation: dotPulse 1.2s 0.36s infinite; }
+
+    /* Плавный аккордеон вопросов */
+    .faq-content {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .faq-item[data-open="true"] .faq-content {
+      grid-template-rows: 1fr;
+    }
+    .faq-item[data-open="true"] .faq-icon {
+      transform: rotate(45deg);
+    }
+
+    /* Появление модального окна */
+    @keyframes modalIn {
+      from { opacity: 0; transform: translateY(10px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .modal-card {
+      animation: modalIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Фокус для доступности */
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible {
+      outline: 2px solid #C75632;
+      outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* ------------------------------------------------------------------
+       Отклик.Про — обновлённая визуальная система
+       Светлая редакционная подача, меньше стоковых образов и тяжёлых блоков.
+       ------------------------------------------------------------------ */
+    :root {
+      color-scheme: light;
+      --site-bg: #F7F8F5;
+      --site-surface: #FFFFFF;
+      --site-soft: #EEF1EB;
+      --site-ink: #202923;
+      --site-muted: #68736B;
+      --site-line: #DDE3DA;
+      --site-accent: #A95A40;
+      --site-green: #365747;
+    }
+    body { background: var(--site-bg) !important; color: var(--site-ink); }
+    header { background: rgba(250,251,248,.94) !important; border-color: var(--site-line) !important; }
+    header .text-ink, main .text-ink { color: var(--site-ink) !important; }
+    .bg-paper { background-color: var(--site-bg) !important; }
+    .bg-paperCard { background-color: var(--site-surface) !important; }
+    .bg-paperAlt { background-color: var(--site-soft) !important; }
+    .text-inkMuted { color: var(--site-muted) !important; }
+    .border-line { border-color: var(--site-line) !important; }
+    .text-terra { color: var(--site-accent) !important; }
+    .bg-terra { background-color: var(--site-accent) !important; }
+    .hover\:bg-terra:hover { background-color: #914A34 !important; }
+    .font-serif { letter-spacing: -.035em; }
+    h1, h2, h3 { text-wrap: balance; }
+    p { text-wrap: pretty; }
+    section { scroll-margin-top: 88px; }
+    header a, button { -webkit-tap-highlight-color: transparent; }
+    main > section:first-child { padding-top: clamp(3.2rem, 7vw, 6.2rem) !important; }
+    main > section:first-child h1 { max-width: 13ch; font-size: clamp(2.65rem, 5vw, 4.35rem) !important; line-height: 1.02 !important; }
+    main > section:first-child .rounded-2xl { box-shadow: 0 18px 50px rgba(37,52,42,.055); }
+    .site-visual-placeholder { position:absolute; inset:0; background:linear-gradient(135deg,#E8EDE6,#F4F1E9 55%,#E8E2D8); }
+    .paper-to-forest { height: 42px !important; background: linear-gradient(180deg,#F7F8F5,#EEF1EB) !important; }
+    /* Фото-разделители превращены в спокойные светлые редакционные полосы. */
+    section.relative.overflow-hidden.border-y { background: #EEF1EB !important; border-color: var(--site-line) !important; }
+    section.relative.overflow-hidden.border-y > .absolute.inset-0 { display:none !important; }
+    section.relative.overflow-hidden.border-y > .site-visual-placeholder { display:none !important; }
+    section.relative.overflow-hidden.border-y h2,
+    section.relative.overflow-hidden.border-y p { color: var(--site-ink) !important; }
+    section.relative.overflow-hidden.border-y span { color: var(--site-accent) !important; }
+    section.relative.overflow-hidden.border-y button { background: var(--site-green) !important; color:white !important; }
+    #benefits .group { background: #E8EDE6 !important; border-color: var(--site-line) !important; }
+    #benefits .group > .absolute.inset-0 { display:none !important; }
+    #benefits .group .relative { color: var(--site-ink) !important; }
+    #benefits .group .relative * { color: var(--site-ink) !important; }
+    #demo { background: #EEF1EB !important; color: var(--site-ink) !important; border-top:1px solid var(--site-line); }
+    #demo .text-paper { color: var(--site-ink) !important; }
+    #demo .text-paper\/60, #demo .text-paper\/65, #demo .text-paper\/70, #demo .text-paper\/75, #demo .text-paper\/80 { color: var(--site-muted) !important; }
+    #demo .bg-forest, #demo .bg-forestSoft, #demo .bg-forest\\/70, #demo .bg-forest\\/90, #demo .bg-forest\\/60, #demo .bg-forest\\/50 {
+      background-color: #FFFFFF !important; color: var(--site-ink) !important; border-color: var(--site-line) !important;
+    }
+    #demo .border-forestLine { border-color: var(--site-line) !important; }
+    #demo .text-\\[\\#F4B8A1\\], #demo .text-\\[\\#E6A48B\\] { color: var(--site-accent) !important; }
+    #demo .bg-terra\\/25 { background: #F3E8E2 !important; }
+    #demo .custom-scroll::-webkit-scrollbar-thumb { background: #C8D0C7; }
+    #demo input { background: #F7F8F5 !important; color: var(--site-ink) !important; border-color: var(--site-line) !important; }
+    #demo input::placeholder { color: #879188 !important; }
+    #demo .dot-pulse-1, #demo .dot-pulse-2, #demo .dot-pulse-3 { background: var(--site-accent) !important; }
+    #pricing .rounded-2xl, #contact .rounded-2xl { box-shadow: 0 12px 36px rgba(37,52,42,.045); }
+    #pricing .bg-forest { background: var(--site-green) !important; }
+    footer { background: #253B30 !important; border-color: #40594B !important; }
+    #contact .relative.flex.flex-col.justify-between { background: #E9EEE8 !important; color: var(--site-ink) !important; }
+    #contact .relative.flex.flex-col.justify-between > .absolute { display:none !important; }
+    #contact .relative.flex.flex-col.justify-between h2,
+    #contact .relative.flex.flex-col.justify-between p,
+    #contact .relative.flex.flex-col.justify-between span { color: var(--site-ink) !important; }
+    #contact .relative.flex.flex-col.justify-between .text-\\[\\#F4B8A1\\] { color: var(--site-accent) !important; }
+    input, textarea, select, button { font: inherit; }
+    input:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid rgba(169,90,64,.45); outline-offset: 3px; }
+    .lead-form input[type="checkbox"] { accent-color: var(--site-accent); }
+    .lead-form button[type="submit"] { background: var(--site-accent) !important; }
+    .lead-form button[type="submit"]:hover { background: #914A34 !important; }
+    @media (max-width: 767px) {
+      main > section:first-child h1 { max-width: 15ch; }
+      #demo .grid { gap: 1rem; }
+      #demo #sandboxMessages { height: 270px !important; }
+      footer .flex.items-center.gap-6 { flex-wrap: wrap; justify-content:center; gap: 1rem; }
+    }
+
+  </style>
+</head>
+<body class="font-sans antialiased selection:bg-terra selection:text-white">
+<!-- ===================================================================== -->
+<!-- НАВИГАЦИЯ                                                             -->
+<!-- ===================================================================== -->
+<header class="sticky top-0 z-40 border-b border-line bg-paper/95 backdrop-blur-md">
+<div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+<!-- Текстовый логотип -->
+<a aria-label="Отклик.Про — на главную" class="inline-flex items-baseline gap-0.5 font-serif text-[32px] font-semibold leading-none tracking-tight text-ink transition-opacity hover:opacity-80 sm:text-[36px]" href="#">
+        Отклик<span class="text-[0.6em] italic font-semibold text-terra">.Про</span>
+</a>
+<!-- Навигация -->
+<nav class="hidden items-center gap-8 text-sm font-medium text-inkMuted md:flex">
+<a class="transition-colors hover:text-ink" href="#benefits">Возможности</a>
+<a class="transition-colors hover:text-ink" href="#demo">Пример работы</a>
+<a class="transition-colors hover:text-ink" href="#pricing">Тарифы</a>
+<a class="transition-colors hover:text-ink" href="#faq">Вопросы</a>
+</nav>
+<!-- Действие + Мобильная кнопка -->
+<div class="flex items-center gap-3">
+<button class="hidden rounded-lg bg-forest px-5 py-2.5 text-sm font-semibold text-paper transition-colors hover:bg-terra sm:inline-flex" onclick="openRequestModal('Тестовый запуск — по согласованию')" type="button">
+          Обсудить запуск
+        </button>
+<button aria-label="Открыть меню" class="inline-flex items-center justify-center rounded-lg border border-line bg-paperCard p-2.5 text-ink transition hover:bg-paperAlt md:hidden" id="mobileMenuBtn" type="button">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+</div>
+<!-- Мобильное меню -->
+<div class="hidden border-t border-line bg-paper px-4 py-4 md:hidden" id="mobileMenu">
+<div class="flex flex-col gap-1.5 text-sm font-medium text-ink">
+<a class="mobile-nav-link rounded-lg px-3 py-2.5 hover:bg-paperAlt" href="#benefits">Возможности</a>
+<a class="mobile-nav-link rounded-lg px-3 py-2.5 hover:bg-paperAlt" href="#demo">Пример работы</a>
+<a class="mobile-nav-link rounded-lg px-3 py-2.5 hover:bg-paperAlt" href="#pricing">Тарифы</a>
+<a class="mobile-nav-link rounded-lg px-3 py-2.5 hover:bg-paperAlt" href="#faq">Вопросы</a>
+<button class="mt-2 w-full rounded-lg bg-forest px-4 py-3 text-center font-semibold text-paper" onclick="openRequestModal('Тестовый запуск — по согласованию'); document.getElementById('mobileMenu').classList.add('hidden');" type="button">
+          Обсудить запуск
+        </button>
+</div>
+</div>
+</header>
+<main>
+<!-- =================================================================== -->
+<!-- ПЕРВЫЙ ЭКРАН                                                        -->
+<!-- =================================================================== -->
+<section class="relative bg-paper pt-12 pb-16 sm:pt-20 sm:pb-24">
+<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+<div class="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-12">
+<!-- Левая часть -->
+<div class="lg:col-span-6">
+<h1 class="font-serif text-[42px] font-semibold leading-[1.03] tracking-tight text-ink sm:text-[56px] lg:text-[64px]">
+              Входящие обращения — в понятном рабочем процессе
+            </h1>
+<!-- Редакционная акцентная линия -->
+<div class="mt-6 h-1 w-16 bg-terra"></div>
+<p class="mt-6 max-w-xl text-base leading-relaxed text-inkMuted sm:text-[17px]">
+              Настраиваем обработку обращений под ваши услуги и правила: система отвечает на типовые вопросы по согласованным материалам, уточняет детали и передаёт диалог сотруднику, когда требуется решение человека.
+            </p>
+<!-- Блок «Что настраиваем / Где внедряем» -->
+<div class="mt-7 grid grid-cols-1 gap-5 border-y border-line py-5 sm:grid-cols-2">
+<div>
+<span class="block text-[11px] font-bold uppercase tracking-[0.12em] text-terra">
+                  Что настраиваем
+                </span>
+<p class="mt-1.5 text-[13px] leading-relaxed text-inkMuted">
+                  Ответы по прайсу и услугам, уточнение запроса, сбор контактов и передача сложных вопросов менеджеру.
+                </p>
+</div>
+<div>
+<span class="block text-[11px] font-bold uppercase tracking-[0.12em] text-terra">
+                  Где внедряем
+                </span>
+<p class="mt-1.5 text-[13px] leading-relaxed text-inkMuted">
+                  Авито, Telegram, ВКонтакте и WhatsApp. Подключаем доступные способы и заранее проверяем ограничения.
+                </p>
+</div>
+</div>
+<!-- Кнопки действий -->
+<div class="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+<button class="rounded-lg bg-terra px-7 py-4 text-sm font-semibold text-white transition-colors hover:bg-terraDark active:scale-[0.99]" onclick="openRequestModal('Тестовый запуск — по согласованию')" type="button">
+                Обсудить тестовый запуск
+              </button>
+<a class="inline-flex items-center justify-center gap-2 rounded-lg border border-ink/25 bg-paperCard px-6 py-4 text-sm font-semibold text-ink transition-colors hover:border-ink hover:bg-paperAlt" href="#demo">
+<span>Посмотреть, как отвечает</span>
+<svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</a>
+</div>
+<!-- Три спокойных факта -->
+<div class="mt-9 grid max-w-lg grid-cols-3 gap-5 border-t border-line pt-6">
+<div>
+<div class="font-serif text-3xl font-semibold text-ink">По графику</div>
+<div class="mt-1 text-xs leading-snug text-inkMuted">в согласованные часы работы</div>
+</div>
+<div>
+<div class="font-serif text-3xl font-semibold text-ink">По задаче</div>
+<div class="mt-1 text-xs leading-snug text-inkMuted">срок после согласования</div>
+</div>
+<div>
+<div class="font-serif text-3xl font-semibold text-terra">от 4 900 ₽</div>
+<div class="mt-1 text-xs leading-snug text-inkMuted">стоимость настройки</div>
+</div>
+</div>
+</div>
+<!-- Правая часть: Живой пример входящего диалога в чистой рамке -->
+<div class="lg:col-span-6">
+<div class="rounded-2xl border border-line bg-paperAlt p-4 sm:p-6">
+<div class="rounded-xl border border-line bg-paperCard p-4 shadow-sm sm:p-6">
+<div class="flex items-center justify-between border-b border-line pb-4">
+<div class="flex items-center gap-2.5">
+<span class="h-2.5 w-2.5 rounded-full bg-sage"></span>
+<span class="text-sm font-semibold text-ink">Входящие обращения</span>
+</div>
+<span class="text-xs text-inkMuted">Сегодня · 12:41</span>
+</div>
+<div class="mt-4 space-y-3.5">
+<!-- Сообщение клиента -->
+<div class="rounded-xl border border-line/80 bg-paper p-3.5">
+<div class="flex items-center justify-between gap-2">
+<span class="text-xs font-semibold text-ink">Авито · Новый диалог</span>
+<span class="text-[11px] text-inkMuted">12:41</span>
+</div>
+<p class="mt-1.5 text-sm leading-relaxed text-inkMuted">
+                      Здравствуйте! Сколько будет стоить замена ГРМ на Skoda Octavia?
+                    </p>
+</div>
+<!-- Ответ системы -->
+<div class="ml-4 rounded-xl border border-terra/25 bg-[#FBF3EF] p-3.5 sm:ml-6">
+<div class="flex items-center justify-between gap-2">
+<span class="text-xs font-semibold text-terra">Пример ответа</span>
+<span class="text-[11px] text-inkMuted">12:41</span>
+</div>
+<p class="mt-1.5 text-sm leading-relaxed text-ink">
+                      Добрый день! Стоимость зависит от двигателя и комплекта запчастей. Подскажите год выпуска и объём — сразу уточню ориентир по цене и свободным окнам.
+                    </p>
+</div>
+<!-- Уведомление менеджеру -->
+<div class="rounded-xl border border-forest/20 bg-forest p-3.5 text-paper">
+<div class="flex items-center gap-2 text-xs font-semibold text-[#9EC7B5]">
+<span class="h-2 w-2 rounded-full bg-[#9EC7B5]"></span>
+                      Пример карточки для менеджера
+                    </div>
+<p class="mt-1.5 text-sm leading-relaxed text-paper/90">
+                      Новый диалог · Skoda Octavia · уточняется комплектация для расчёта
+                    </p>
+</div>
+</div>
+</div>
+<div class="mt-4 flex items-center justify-between gap-3 px-1 text-xs text-inkMuted">
+<span>Так выглядит рабочий сценарий обработки</span>
+<span class="rounded-md border border-line bg-paperCard px-2.5 py-1 font-medium text-ink">
+                  Пример интерфейса
+                </span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- =================================================================== -->
+<!-- ФОТО-БАННЕР #1: АТМОСФЕРНЫЙ РАЗДЕЛИТЕЛЬ С РЕАЛЬНОЙ ФОТОГРАФИЕЙ      -->
+<!-- =================================================================== -->
+<section class="relative overflow-hidden border-y border-line py-16 sm:py-20">
+<div aria-hidden="true" class="site-visual-placeholder"></div>
+<!-- Тёплое хвойное затемнение, чтобы баннер гармонировал с палитрой -->
+<div class="absolute inset-0 bg-gradient-to-r from-forest/95 via-forest/85 to-forest/70"></div>
+<div class="relative mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 px-4 sm:px-6 lg:flex-row lg:items-center lg:px-8">
+<div class="max-w-2xl">
+<span class="text-xs font-semibold uppercase tracking-[0.14em] text-[#E6A48B]">
+            Главное преимущество скорости
+          </span>
+<h2 class="mt-2.5 font-serif text-3xl font-semibold leading-tight text-paper sm:text-4xl lg:text-[42px]">
+            Пока вы заняты заказом, система принимает обращение, уточняет детали и передаёт разговор вам
+          </h2>
+</div>
+<button class="shrink-0 rounded-lg bg-paper px-6 py-3.5 text-sm font-semibold text-forest transition-colors hover:bg-terra hover:text-white" onclick="openRequestModal('Тестовый запуск — по согласованию')" type="button">
+          Проверить на своих заявках
+        </button>
+</div>
+</section>
+<!-- =================================================================== -->
+<!-- ВОЗМОЖНОСТИ: СВЕТЛАЯ СЕКЦИЯ С 2 РЕАЛЬНЫМИ ФОТО-КАРТОЧКАМИ           -->
+<!-- =================================================================== -->
+<section class="scroll-mt-20 bg-paper py-20 sm:py-24" id="benefits">
+<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+<div class="max-w-2xl">
+<span class="text-xs font-bold uppercase tracking-[0.14em] text-terra">
+            Как это работает в деле
+          </span>
+<h2 class="mt-2 font-serif text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
+            Отвечает по вашим правилам, а не наугад
+          </h2>
+<p class="mt-3 text-base leading-relaxed text-inkMuted">
+            Обсуждаем ваши процессы, подключаем нужные каналы и проверяем сценарии на типичных вопросах клиентов.
+          </p>
+</div>
+<!-- Асимметричная сетка: 2 фото-карточки + 2 светлые текстовые -->
+<div class="mt-12 grid grid-cols-1 gap-6 lg:grid-cols-12">
+<!-- Карточка 1 (с фотографией и тёмно-хвойным градиентом) -->
+<div class="group relative min-h-[320px] overflow-hidden rounded-2xl border border-line bg-forest lg:col-span-7">
+<div aria-hidden="true" class="site-visual-placeholder"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-forest/95 via-forest/60 to-forest/20"></div>
+<div class="relative flex h-full flex-col justify-end p-6 sm:p-8">
+<span class="inline-flex w-fit rounded-md bg-terra px-3 py-1 text-xs font-semibold text-white">
+                Подключение каналов
+              </span>
+<h3 class="mt-3 font-serif text-2xl font-semibold leading-snug text-paper sm:text-3xl">
+                Подключаем нужные площадки к одному процессу
+              </h3>
+<p class="mt-2 max-w-lg text-sm leading-relaxed text-paper/85">
+                Подключение настраивается доступными для выбранной площадки способами. До запуска отдельно согласуем необходимые доступы и ограничения.
+              </p>
+</div>
+</div>
+<!-- Карточка 2 (светлая карточка) -->
+<div class="flex flex-col justify-between rounded-2xl border border-line bg-paperCard p-6 sm:p-8 lg:col-span-5">
+<div>
+<div class="flex h-11 w-11 items-center justify-center rounded-xl bg-terra/15 text-terra">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<h3 class="mt-5 font-serif text-2xl font-semibold leading-snug text-ink sm:text-[26px]">
+                Знает ваш прайс, сроки и акции до мелочей
+              </h3>
+<p class="mt-2.5 text-sm leading-relaxed text-inkMuted">
+                Просто скиньте таблицу, PDF или список услуг с ценами. Система сама уточнит параметры заказа и назовёт верную вилку без выдумок.
+              </p>
+</div>
+<div class="mt-6 flex flex-wrap gap-2">
+<span class="rounded-md border border-line bg-paper px-3 py-1.5 text-xs font-medium text-ink">PDF / Excel</span>
+<span class="rounded-md border border-line bg-paper px-3 py-1.5 text-xs font-medium text-ink">Уточняет детали</span>
+<span class="rounded-md border border-line bg-paper px-3 py-1.5 text-xs font-medium text-ink">По заданным правилам</span>
+</div>
+</div>
+<!-- Карточка 3 (светлая карточка) -->
+<div class="flex flex-col justify-between rounded-2xl border border-line bg-paperCard p-6 sm:p-8 lg:col-span-5">
+<div>
+<div class="flex h-11 w-11 items-center justify-center rounded-xl bg-forest text-paper">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<h3 class="mt-5 font-serif text-2xl font-semibold leading-snug text-ink sm:text-[26px]">
+                Аккуратная карточка клиента в Telegram или CRM
+              </h3>
+<p class="mt-2.5 text-sm leading-relaxed text-inkMuted">
+                Как только покупатель оставил номер телефона или попросил связаться с мастером, вы получаете сводку в личный чат, amoCRM или Битрикс24.
+              </p>
+</div>
+<div class="mt-6 rounded-xl border border-sage/30 bg-[#EBF3EE] px-4 py-3 text-xs font-medium text-forest">
+              Если вопрос сложный или нестандартный — система сразу позовёт вас в диалог.
+            </div>
+</div>
+<!-- Карточка 4 (с фотографией и тёмно-хвойным градиентом) -->
+<div class="group relative min-h-[320px] overflow-hidden rounded-2xl border border-line bg-forest lg:col-span-7">
+<div aria-hidden="true" class="site-visual-placeholder"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-forest/95 via-forest/60 to-forest/20"></div>
+<div class="relative flex h-full flex-col justify-end p-6 sm:p-8">
+<span class="inline-flex w-fit rounded-md bg-sage px-3 py-1 text-xs font-semibold text-white">
+                Тестовый период
+              </span>
+<h3 class="mt-3 font-serif text-2xl font-semibold leading-snug text-paper sm:text-3xl">
+                Два дня, чтобы проверить сценарий в деле
+              </h3>
+<p class="mt-2 max-w-lg text-sm leading-relaxed text-paper/85">
+                Проверим ответы на типичных обращениях и передачу контактов в ваш Telegram. После теста решите, подходит ли вам настройка.
+              </p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- =================================================================== -->
+<!-- ПЛАВНЫЙ ГРАДИЕНТНЫЙ ПЕРЕХОД В ХВОЙНУЮ СЕКЦИЮ                        -->
+<!-- =================================================================== -->
+<div class="paper-to-forest h-24 sm:h-32"></div>
+<!-- =================================================================== -->
+<!-- ПРИМЕР РАБОТЫ (ГЛУБОКИЙ ХВОЙНЫЙ + КАСТОМНЫЙ АНИМИРОВАННЫЙ ДРОПДАУН) -->
+<!-- =================================================================== -->
+<section class="scroll-mt-20 bg-forest pt-4 pb-20 text-paper sm:pb-24" id="demo">
+<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+<!-- Заголовок + Выбор сферы -->
+<div class="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+<div class="max-w-xl">
+<span class="text-xs font-bold uppercase tracking-[0.14em] text-[#E6A48B]">
+              Пример работы
+            </span>
+<h2 class="mt-2 font-serif text-4xl font-semibold leading-tight text-paper sm:text-5xl">
+              Пример диалога с клиентом
+            </h2>
+<p class="mt-3 text-sm leading-relaxed text-paper/75 sm:text-base">
+              Выберите сферу бизнеса и нажмите на одну из готовых реплик. Справа обновится пример уведомления для менеджера. Это интерактивный макет для демонстрации логики.
+            </p>
+</div>
+<!-- КАСТОМНЫЙ АНИМИРОВАННЫЙ DROPDOWN (выбор сферы) -->
+<div class="w-full sm:w-80">
+<label class="mb-2 block text-xs font-medium text-paper/70">Выберите сферу для теста</label>
+<div class="custom-dropdown relative" data-open="false" id="nicheDropdown">
+<button class="dropdown-trigger flex w-full items-center justify-between gap-3 rounded-xl border border-forestLine bg-forestSoft px-4 py-3.5 text-left text-sm font-semibold text-paper transition hover:border-terra" type="button">
+<span class="flex items-center gap-3">
+<span class="flex h-8 w-8 items-center justify-center rounded-lg bg-terra/25 text-[#F2B59E]" id="nicheSelectedIcon">
+<svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</span>
+<span>
+<span class="block text-sm font-semibold text-paper" id="nicheSelectedTitle">Автосервис · Авито</span>
+<span class="block text-[11px] font-normal text-paper/65" id="nicheSelectedSub">СТО «АвтоМастер»</span>
+</span>
+</span>
+<svg class="dropdown-chevron h-4 w-4 text-paper/65 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+<div class="dropdown-menu absolute right-0 left-0 z-30 mt-2 overflow-hidden rounded-xl border border-forestLine bg-[#101E19] p-1.5 shadow-2xl">
+<button class="dropdown-option flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition hover:bg-forestSoft" data-sub="СТО «АвтоМастер»" data-title="Автосервис · Авито" data-value="auto" type="button">
+<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-terra/25 text-[#F2B59E]">
+<svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</span>
+<span class="flex-1">
+<span class="block text-sm font-semibold text-paper">Автосервис · Авито</span>
+<span class="block text-[11px] text-paper/65">Запись на ТО и диагностику</span>
+</span>
+</button>
+<button class="dropdown-option flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition hover:bg-forestSoft" data-sub="СК «Ровный Дом»" data-title="Ремонт квартир · Telegram" data-value="repair" type="button">
+<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#D49B4B]/20 text-[#ECC481]">
+<svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</span>
+<span class="flex-1">
+<span class="block text-sm font-semibold text-paper">Ремонт квартир · Telegram</span>
+<span class="block text-[11px] text-paper/65">Ориентир сметы и выезд на замер</span>
+</span>
+</button>
+<button class="dropdown-option flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition hover:bg-forestSoft" data-sub="Фабрика «НордМебель»" data-title="Мебель · ВКонтакте" data-value="furniture" type="button">
+<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#5A9E7C]/20 text-[#9EC7B5]">
+<svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</span>
+<span class="flex-1">
+<span class="block text-sm font-semibold text-paper">Мебель · ВКонтакте</span>
+<span class="block text-[11px] text-paper/65">Наличие на складе и доставка</span>
+</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Рабочая область стенда -->
+<div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-12">
+<!-- Левая часть: Чат -->
+<div class="flex flex-col overflow-hidden rounded-2xl border border-forestLine bg-forestSoft lg:col-span-7">
+<div class="flex items-center justify-between border-b border-forestLine px-5 py-4">
+<div class="flex items-center gap-3">
+<span class="rounded-md bg-terra/25 px-2.5 py-1 text-xs font-semibold text-[#F4B8A1]" id="chatTag">
+                  Авито
+                </span>
+<span class="text-sm font-semibold text-paper" id="chatTitle">СТО «АвтоМастер»</span>
+</div>
+<button class="rounded-lg border border-forestLine bg-forest px-3 py-1.5 text-xs font-medium text-paper/80 transition hover:border-paper/40 hover:text-paper" id="resetSandboxBtn" type="button">
+                Сбросить чат
+              </button>
+</div>
+<!-- Сообщения -->
+<div class="custom-scroll flex h-[320px] flex-col gap-3 overflow-y-auto p-5 sm:h-[350px]" id="sandboxMessages"></div>
+<!-- Быстрые реплики -->
+<div class="border-t border-forestLine bg-forest/60 px-5 py-3.5">
+<div class="mb-2 text-[11px] font-medium text-paper/60">Нажмите, чтобы проверить ответ:</div>
+<div class="flex flex-wrap gap-2" id="sandboxPresets"></div>
+</div>
+<!-- Поле ввода -->
+<form class="flex items-center gap-2.5 border-t border-forestLine bg-forest/90 p-3.5" id="sandboxForm">
+<input autocomplete="off" class="w-full rounded-lg border border-forestLine bg-forestSoft px-4 py-3 text-sm text-paper placeholder-paper/45 focus:border-terra focus:outline-none" id="sandboxInput" placeholder="Напишите вопрос или номер телефона..." type="text"/>
+<button class="shrink-0 rounded-lg bg-terra px-5 py-3 text-sm font-semibold text-white transition hover:bg-terraDark active:scale-95" type="submit">
+                Отправить
+              </button>
+</form>
+</div>
+<!-- Правая часть: Карточка для Telegram -->
+<div class="flex flex-col justify-between rounded-2xl border border-forestLine bg-forestSoft p-6 lg:col-span-5">
+<div>
+<div class="flex items-center justify-between border-b border-forestLine pb-4">
+<div class="flex items-center gap-3">
+<span class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#9EC7B5]/15 text-[#9EC7B5]">
+<svg class="h-5 w-5" fill="currentColor" viewbox="0 0 24 24">
+<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"></path>
+</svg>
+</span>
+<div>
+<div class="text-sm font-semibold text-paper">Заявка в ваш Telegram</div>
+<div class="text-xs text-paper/60">Пример уведомления</div>
+</div>
+</div>
+<span class="rounded-md bg-forest px-2.5 py-1 text-[11px] font-semibold text-paper/75" id="leadStateBadge">
+                  Диалог идёт
+                </span>
+</div>
+<div class="mt-5 rounded-xl border border-forestLine bg-forest/70 p-5 transition-all duration-300" id="leadCardBox">
+<dl class="space-y-3.5 text-sm">
+<div class="flex justify-between gap-3">
+<dt class="text-paper/60">Площадка</dt>
+<dd class="text-right font-semibold text-paper" id="outChannel">Авито Чат</dd>
+</div>
+<div class="flex justify-between gap-3 border-t border-forestLine pt-3">
+<dt class="text-paper/60">Клиент</dt>
+<dd class="text-right font-semibold text-paper" id="outClient">Алексей (Skoda Octavia)</dd>
+</div>
+<div class="flex flex-col gap-1 border-t border-forestLine pt-3">
+<dt class="text-paper/60">Суть обращения</dt>
+<dd class="font-medium text-paper/95" id="outSummary">Уточняет цену ТО и диагностики ходовой</dd>
+</div>
+<div class="flex justify-between gap-3 border-t border-forestLine pt-3">
+<dt class="text-paper/60">Расчёт по прайсу</dt>
+<dd class="text-right font-semibold text-[#F4B8A1]" id="outEstimate">от 6 500 ₽</dd>
+</div>
+<div class="flex justify-between gap-3 border-t border-forestLine pt-3">
+<dt class="text-paper/60">Контакт клиента</dt>
+<dd class="text-right font-bold text-paper/45" id="outPhone">ожидается...</dd>
+</div>
+</dl>
+</div>
+</div>
+<div class="mt-6 rounded-xl border border-forestLine bg-forest/50 p-4 text-xs leading-relaxed text-paper/70">
+              Это интерактивный макет с заранее подготовленными ответами, а не подключённый к реальному аккаунту ИИ. Нажмите реплики, чтобы посмотреть пример карточки обращения.
+            </div>
+</div>
+</div>
+</div>
+</section>
+<!-- =================================================================== -->
+<!-- ФОТО-БАННЕР #2: ПЕРЕД ТАРИФАМИ                                      -->
+<!-- =================================================================== -->
+<section class="relative overflow-hidden border-y border-forestLine py-14 sm:py-16">
+<div aria-hidden="true" class="site-visual-placeholder"></div>
+<div class="absolute inset-0 bg-gradient-to-r from-forest/95 via-forest/85 to-forest/75"></div>
+<div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+<div class="max-w-2xl">
+<span class="text-xs font-semibold uppercase tracking-[0.14em] text-[#E6A48B]">
+            Стоимость без сюрпризов
+          </span>
+<h2 class="mt-2 font-serif text-3xl font-semibold leading-tight text-paper sm:text-4xl">
+            Сначала согласуем задачу — затем приступим к настройке
+          </h2>
+<p class="mt-3 text-sm leading-relaxed text-paper/80 sm:text-base">
+            Вы заранее знаете, что входит в запуск, какие каналы подключаются и сколько стоит сопровождение.
+          </p>
+</div>
+</div>
+</section>
+<!-- =================================================================== -->
+<!-- ТАРИФЫ (СВЕТЛЫЙ ЛЁН + ЧИСТЫЙ КОНТРАСТ КНОПОК)                       -->
+<!-- =================================================================== -->
+<section class="scroll-mt-20 bg-paper py-20 sm:py-24" id="pricing">
+<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+<!-- 3 основных тарифа -->
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+<!-- Тариф 1: Пробный период -->
+<div class="flex flex-col justify-between rounded-2xl border border-line bg-paperCard p-7 transition hover:border-ink/30">
+<div>
+<span class="inline-flex rounded-md bg-[#EBF3EE] px-3 py-1 text-xs font-semibold text-forest">
+                Без предоплаты
+              </span>
+<h3 class="mt-4 font-serif text-3xl font-semibold text-ink">Пробный период</h3>
+<p class="mt-1 text-sm text-inkMuted">Проверка на ваших реальных диалогах</p>
+<div class="mt-6 border-y border-line py-5">
+<div class="flex items-baseline gap-2">
+<span class="font-serif text-5xl font-semibold text-ink">0 ₽</span>
+<span class="text-sm text-inkMuted">на 2 полных дня</span>
+</div>
+</div>
+<ul class="mt-6 space-y-3 text-sm text-inkMuted">
+<li class="flex items-start gap-2.5">
+<svg class="mt-0.5 h-4 w-4 shrink-0 text-sage" fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Подключение 1 площадки (Авито или Telegram)</span>
+</li>
+<li class="flex items-start gap-2.5">
+<svg class="mt-0.5 h-4 w-4 shrink-0 text-sage" fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Настройка ответов по вашему прайсу</span>
+</li>
+<li class="flex items-start gap-2.5">
+<svg class="mt-0.5 h-4 w-4 shrink-0 text-sage" fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Пересылка контактов клиентов в Telegram</span>
+</li>
+<li class="flex items-start gap-2.5">
+<svg class="mt-0.5 h-4 w-4 shrink-0 text-sage" fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Без привязки карты и обязательств</span>
+</li>
+</ul>
+</div>
+<button class="mt-8 w-full rounded-lg border border-ink/25 bg-paper px-5 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-forest hover:bg-forest hover:text-paper" onclick="openRequestModal('Тестовый запуск — по согласованию')" type="button">
+              Запустить тест на 2 дня
+            </button>
+</div>
+<!-- Тариф 2: Стандарт (Выделенный) -->
+<div class="relative flex flex-col justify-between rounded-2xl border-2 border-terra bg-paperCard p-7 shadow-lg shadow-ink/5">
+<div class="absolute -top-3.5 right-6 rounded-md bg-terra px-3 py-1 text-xs font-semibold text-white">
+              Оптимальный выбор
+            </div>
+<div>
+<span class="inline-flex rounded-md bg-terra/15 px-3 py-1 text-xs font-semibold text-terra">
+                Для малого бизнеса
+              </span>
+<h3 class="mt-4 font-serif text-3xl font-semibold text-ink">Стандарт</h3>
+<p class="mt-1 text-sm text-inkMuted">Быстрый запуск и стабильный поток заявок</p>
+<div class="mt-6 border-y border-line py-5">
+<div class="flex items-baseline gap-2">
+<span class="font-serif text-5xl font-semibold text-ink">4 900 ₽</span>
+<span class="text-sm text-inkMuted">запуск под ключ</span>
+</div>
+<div class="mt-1.5 text-xs font-semibold text-terra">
+                  + 1 900 ₽ / мес сервер и сопровождение
+                </div>
+</div>
+<ul class="mt-6 space-y-3 text-sm text-ink">
+<li class="flex items-start gap-2.5">
+<svg class="mt-0.5 h-4 w-4 shrink-0 text-terra" fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Авито + Telegram в одной связке</span>
+</li>
+<li class="flex items-start gap-2.5">
+<svg class="mt-0.5 h-4 w-4 shrink-0 text-terra" fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Индивидуальная логика под ваши услуги и цены</span>
+</li>
+<li class="flex items-start gap-2.5">
+<svg class="mt-0.5 h-4 w-4 shrink-0 text-terra" fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Сбор телефонов и мгновенные уведомления</span>
+</li>
+<li class="flex items-start gap-2.5">
+<svg class="mt-0.5 h-4 w-4 shrink-0 text-terra" fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Прямая связь с разработчиком по правкам</span>
+</li>
+</ul>
+</div>
+<button class="mt-8 w-full rounded-lg bg-terra px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-terraDark" onclick="openRequestModal('Стандарт (4 900 ₽ + 1 900 ₽/мес)')" type="button">
+              Выбрать «Стандарт»
+            </button>
+</div>
+<!-- Тариф 3: Про -->
+<div class="flex flex-col justify-between rounded-2xl border border-line bg-paperCard p-7 transition hover:border-ink/30">
+<div>
+<span class="inline-flex rounded-md bg-paperAlt px-3 py-1 text-xs font-semibold text-ink">
+                Все каналы + CRM
+              </span>
+<h3 class="mt-4 font-serif text-3xl font-semibold text-ink">Про</h3>
+<p class="mt-1 text-sm text-inkMuted">Для компаний с потоком заявок и отделом продаж</p>
+<div class="mt-6 border-y border-line py-5">
+<div class="flex items-baseline gap-2">
+<span class="font-serif text-5xl font-semibold text-ink">11 900 ₽</span>
+<span class="text-sm text-inkMuted">запуск под ключ</span>
+</div>
+<div class="mt-1.5 text-xs font-medium text-inkMuted">
+                  + 3 500 ₽ / мес сопровождение и инфраструктура (состав работ согласуется до запуска)
+                </div>
+</div>
+<ul class="mt-6 space-y-3 text-sm text-inkMuted">
+<li class="flex items-start gap-2.5">
+<svg class="mt-0.5 h-4 w-4 shrink-0 text-sage" fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Подключение согласованных каналов при наличии доступной интеграции</span>
+</li>
+<li class="flex items-start gap-2.5">
+<svg class="mt-0.5 h-4 w-4 shrink-0 text-sage" fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Интеграция с amoCRM, Битрикс24 или Таблицами</span>
+</li>
+<li class="flex items-start gap-2.5">
+<svg class="mt-0.5 h-4 w-4 shrink-0 text-sage" fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Сложный расчёт стоимости и фильтр спама</span>
+</li>
+<li class="flex items-start gap-2.5">
+<svg class="mt-0.5 h-4 w-4 shrink-0 text-sage" fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Доработки сценариев под ваши процессы</span>
+</li>
+</ul>
+</div>
+<button class="mt-8 w-full rounded-lg border border-ink/25 bg-paper px-5 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-forest hover:bg-forest hover:text-paper" onclick="openRequestModal('Про (11 900 ₽ + 3 500 ₽/мес)')" type="button">
+              Выбрать «Про»
+            </button>
+</div>
+</div>
+<!-- Индивидуальный блок: Цена по договорённости -->
+<div class="mt-6 flex flex-col items-start justify-between gap-6 rounded-2xl border border-dashed border-ink/25 bg-paperAlt/80 p-6 sm:p-8 lg:flex-row lg:items-center">
+<div class="flex items-start gap-4">
+<span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-terra/15 text-terra">
+<svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.9" viewbox="0 0 24 24">
+<path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</span>
+<div>
+<h3 class="font-serif text-2xl font-semibold text-ink sm:text-[26px]">
+                Индивидуальная задача — цена по договорённости
+              </h3>
+<p class="mt-1 max-w-2xl text-sm leading-relaxed text-inkMuted">
+                Нужен свой функционал, нестандартная связка площадок или вы рассчитываете на конкретный бюджет? Просто укажите ориентир — подберём оптимальную сборку без лишних функций.
+              </p>
+</div>
+</div>
+<button class="w-full shrink-0 rounded-lg bg-forest px-6 py-3.5 text-sm font-semibold text-paper transition-colors hover:bg-terra lg:w-auto" onclick="openRequestModal('По договорённости (индивидуально)')" type="button">
+            Обсудить свой бюджет
+          </button>
+</div>
+</div>
+</section>
+<!-- =================================================================== -->
+<!-- ЧАСТЫЕ ВОПРОСЫ                                                      -->
+<!-- =================================================================== -->
+<section class="scroll-mt-20 border-t border-line bg-paper py-20" id="faq">
+<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+<div class="grid grid-cols-1 gap-10 lg:grid-cols-12">
+<div class="lg:col-span-4">
+<span class="text-xs font-bold uppercase tracking-[0.14em] text-terra">Частые вопросы</span>
+<h2 class="mt-2 font-serif text-4xl font-semibold leading-tight text-ink">
+              Перед подключением
+            </h2>
+<p class="mt-3 text-sm leading-relaxed text-inkMuted">
+              Коротко отвечаем на вопросы о подключении, настройке и стоимости.
+            </p>
+</div>
+<div class="divide-y divide-line border-y border-line lg:col-span-8">
+<div class="faq-item py-5" data-open="true">
+<button class="faq-toggle flex w-full items-center justify-between gap-4 text-left" type="button">
+<span class="text-base font-semibold text-ink">Не заблокируют ли мой аккаунт на Авито?</span>
+<span class="faq-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-line bg-paperCard text-lg text-ink transition-transform">+</span>
+</button>
+<div class="faq-content">
+<div class="overflow-hidden">
+<p class="pt-3 text-sm leading-relaxed text-inkMuted">
+                    Нет. Для Авито используем предусмотренные площадкой способы интеграции. Перед подключением проверяем доступность нужных функций и согласуем с вами необходимые права.
+                  </p>
+</div>
+</div>
+</div>
+<div class="faq-item py-5" data-open="false">
+<button class="faq-toggle flex w-full items-center justify-between gap-4 text-left" type="button">
+<span class="text-base font-semibold text-ink">Что если клиент начнёт торговаться или задаст сложный вопрос?</span>
+<span class="faq-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-line bg-paperCard text-lg text-ink transition-transform">+</span>
+</button>
+<div class="faq-content">
+<div class="overflow-hidden">
+<p class="pt-3 text-sm leading-relaxed text-inkMuted">
+                    Мы заранее прописываем границы: система не выдумывает скидки и не обещает лишнего. В нестандартной ситуации она вежливо берёт паузу и сразу отправляет вам уведомление в Telegram, чтобы вы подключились лично.
+                  </p>
+</div>
+</div>
+</div>
+<div class="faq-item py-5" data-open="false">
+<button class="faq-toggle flex w-full items-center justify-between gap-4 text-left" type="button">
+<span class="text-base font-semibold text-ink">Можно ли договориться о цене под мой бюджет?</span>
+<span class="faq-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-line bg-paperCard text-lg text-ink transition-transform">+</span>
+</button>
+<div class="faq-content">
+<div class="overflow-hidden">
+<p class="pt-3 text-sm leading-relaxed text-inkMuted">
+                    Да. Выберите в форме вариант «По договорённости» и укажите, на какой бюджет рассчитываете — мы предложим облегчённую или индивидуальную сборку ровно под ваши задачи.
+                  </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- =================================================================== -->
+<!-- ФОРМА ЗАЯВКИ (С ФОТО-ПАНЕЛЬЮ И ЧИСТЫМИ КАСТОМНЫМИ ДРОПДАУНАМИ)      -->
+<!-- =================================================================== -->
+<section class="scroll-mt-20 border-t border-line bg-paper py-20 sm:py-24" id="contact">
+<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+<div class="overflow-hidden rounded-2xl border border-line bg-paperCard shadow-sm">
+<div class="grid grid-cols-1 lg:grid-cols-12">
+<!-- Левая часть с атмосферной фотографией и хвойным градиентом -->
+<div class="relative flex flex-col justify-between overflow-hidden bg-forest p-8 text-paper sm:p-10 lg:col-span-5">
+<div aria-hidden="true" class="site-visual-placeholder"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-forest/95 via-forest/85 to-forest/75"></div>
+<div class="relative">
+<span class="inline-flex rounded-md bg-paper/15 px-3 py-1 text-xs font-semibold text-[#F4B8A1] backdrop-blur-sm">
+                  Свяжемся по согласованному каналу
+                </span>
+<h2 class="mt-4 font-serif text-4xl font-semibold leading-tight text-paper">
+                  Проверим на ваших обращениях
+                </h2>
+<p class="mt-3 text-sm leading-relaxed text-paper/80">
+                  Заявка сразу приходит разработчику в Telegram. Обсудим ваши площадки, прайс и комфортный бюджет — без навязывания.
+                </p>
+</div>
+<div class="relative mt-10 space-y-3 border-t border-paper/15 pt-6 text-xs text-paper/80">
+<div class="flex items-center justify-between">
+<span class="text-paper/60">Пробный период:</span>
+<span class="font-semibold text-[#9EC7B5]">Условия теста — по согласованию</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-paper/60">Подключение:</span>
+<span class="font-semibold text-paper">Срок — после оценки задачи</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-paper/60">Оплата:</span>
+<span class="font-semibold text-paper">После проверки в работе</span>
+</div>
+</div>
+</div>
+<!-- Правая часть: Чистая светлая форма с исправленными дропдаунами -->
+<div class="p-8 sm:p-10 lg:col-span-7">
+<form class="lead-form space-y-5" id="mainLeadForm">
+<div aria-hidden="true" class="sr-only">
+<label>Не заполняйте это поле<input autocomplete="off" name="website" tabindex="-1" type="text"/></label>
+</div>
+<div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+<div>
+<label class="mb-1.5 block text-xs font-semibold text-ink" for="lead-field-1">Ваше имя *</label>
+<input class="w-full rounded-lg border border-line bg-paper px-4 py-3.5 text-sm text-ink placeholder-inkMuted/60 focus:border-terra focus:outline-none" id="lead-field-1" name="name" placeholder="Александр" required="" type="text"/>
+</div>
+<div>
+<label class="mb-1.5 block text-xs font-semibold text-ink" for="lead-field-2">Telegram или телефон *</label>
+<input class="w-full rounded-lg border border-line bg-paper px-4 py-3.5 text-sm text-ink placeholder-inkMuted/60 focus:border-terra focus:outline-none" id="lead-field-2" name="contact" placeholder="@username или +7 999 000-00-00" required="" type="text"/>
+</div>
+</div>
+<div>
+<label class="mb-1.5 block text-xs font-semibold text-ink" for="lead-field-3">Сфера бизнеса или ссылка на Авито *</label>
+<input class="w-full rounded-lg border border-line bg-paper px-4 py-3.5 text-sm text-ink placeholder-inkMuted/60 focus:border-terra focus:outline-none" id="lead-field-3" name="business" placeholder="Например: автосервис, ремонт квартир, продажа мебели..." required="" type="text"/>
+</div>
+<div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+<!-- Кастомный dropdown: Формат -->
+<div>
+<label class="mb-1.5 block text-xs font-semibold text-ink" for="lead-field-4">Интересующий формат</label>
+<div class="custom-dropdown relative" data-default="Тестовый запуск — по согласованию" data-open="false">
+<input id="lead-field-4" name="tariff" type="hidden" value="Тестовый запуск — по согласованию"/>
+<button class="dropdown-trigger flex w-full items-center justify-between gap-2 rounded-lg border border-line bg-paper px-4 py-3.5 text-left text-sm font-medium text-ink transition hover:border-ink/40" type="button">
+<span class="dropdown-label truncate">Тестовый запуск — по согласованию</span>
+<svg class="dropdown-chevron h-4 w-4 shrink-0 text-inkMuted transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+<div class="dropdown-menu absolute right-0 left-0 z-30 mt-2 overflow-hidden rounded-xl border border-line bg-paperCard p-1.5 shadow-xl">
+<button class="dropdown-option flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition hover:bg-paperAlt" data-value="Тестовый запуск — по согласованию" type="button">
+<span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#EBF3EE] text-[11px] font-bold text-forest">0₽</span>
+<span>
+<span class="block text-xs font-semibold text-ink">Пробный период</span>
+<span class="block text-[11px] text-inkMuted">Тестовый запуск по согласованию</span>
+</span>
+</button>
+<button class="dropdown-option flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition hover:bg-paperAlt" data-value="Стандарт (4 900 ₽ + 1 900 ₽/мес)" type="button">
+<span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-terra/15 text-xs font-bold text-terra">★</span>
+<span>
+<span class="block text-xs font-semibold text-ink">Стандарт</span>
+<span class="block text-[11px] text-inkMuted">4 900 ₽ запуск + 1 900 ₽/мес</span>
+</span>
+</button>
+<button class="dropdown-option flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition hover:bg-paperAlt" data-value="Про (11 900 ₽ + 3 500 ₽/мес)" type="button">
+<span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-forest/10 text-xs font-bold text-forest">Pro</span>
+<span>
+<span class="block text-xs font-semibold text-ink">Про (все каналы + CRM)</span>
+<span class="block text-[11px] text-inkMuted">11 900 ₽ запуск + 3 500 ₽/мес</span>
+</span>
+</button>
+<button class="dropdown-option flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition hover:bg-paperAlt" data-value="По договорённости (индивидуально)" type="button">
+<span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#F3E8D5] text-xs font-bold text-[#8F6021]">₽</span>
+<span>
+<span class="block text-xs font-semibold text-ink">По договорённости</span>
+<span class="block text-[11px] text-inkMuted">Под ваш бюджет и задачу</span>
+</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Кастомный dropdown: Бюджет -->
+<div>
+<label class="mb-1.5 block text-xs font-semibold text-ink" for="lead-field-5">На какой бюджет рассчитываете?</label>
+<div class="custom-dropdown relative" data-default="Сначала бесплатный тест" data-open="false">
+<input id="lead-field-5" name="budget" type="hidden" value="Сначала бесплатный тест"/>
+<button class="dropdown-trigger flex w-full items-center justify-between gap-2 rounded-lg border border-line bg-paper px-4 py-3.5 text-left text-sm font-medium text-ink transition hover:border-ink/40" type="button">
+<span class="dropdown-label truncate">Сначала бесплатный тест</span>
+<svg class="dropdown-chevron h-4 w-4 shrink-0 text-inkMuted transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+<div class="dropdown-menu absolute right-0 left-0 z-30 mt-2 overflow-hidden rounded-xl border border-line bg-paperCard p-1.5 shadow-xl">
+<button class="dropdown-option flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs font-medium text-ink transition hover:bg-paperAlt" data-value="Сначала бесплатный тест" type="button">
+<span class="h-2 w-2 rounded-full bg-sage"></span>
+<span>Сначала бесплатный тест (0 ₽)</span>
+</button>
+<button class="dropdown-option flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs font-medium text-ink transition hover:bg-paperAlt" data-value="До 5 000 ₽" type="button">
+<span class="h-2 w-2 rounded-full bg-terra"></span>
+<span>До 5 000 ₽</span>
+</button>
+<button class="dropdown-option flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs font-medium text-ink transition hover:bg-paperAlt" data-value="5 000 – 15 000 ₽" type="button">
+<span class="h-2 w-2 rounded-full bg-forest"></span>
+<span>5 000 – 15 000 ₽</span>
+</button>
+<button class="dropdown-option flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs font-medium text-ink transition hover:bg-paperAlt" data-value="Обсудим индивидуально" type="button">
+<span class="h-2 w-2 rounded-full bg-[#B5823A]"></span>
+<span>Обсудим индивидуально</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<label class="flex items-start gap-2.5 text-xs leading-relaxed text-inkMuted">
+<input class="mt-0.5 h-4 w-4 shrink-0 accent-[#A95A40]" name="consent" required="" type="checkbox"/>
+<span>Согласен(на) на обработку данных для ответа на обращение. <a class="underline underline-offset-2 hover:text-ink" href="/privacy.html" rel="noopener" target="_blank">Политика конфиденциальности</a>.</span>
+</label>
+<button class="submit-btn w-full rounded-lg bg-terra px-6 py-4 text-sm font-semibold text-white transition-colors hover:bg-terraDark active:scale-[0.99] disabled:opacity-60" type="submit">
+                  Отправить заявку в Telegram
+                </button>
+<div class="form-feedback hidden rounded-lg border p-3.5 text-xs leading-relaxed"></div>
+</form>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- ===================================================================== -->
+<!-- ПОДВАЛ                                                                -->
+<!-- ===================================================================== -->
+<footer class="border-t border-forestLine bg-forest text-paper/75">
+<div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-8 text-xs sm:flex-row sm:px-6 lg:px-8">
+<div class="flex items-baseline gap-2">
+<span class="font-serif text-2xl font-semibold text-paper">
+          Отклик<span class="italic text-[#E6A48B]">.Про</span>
+</span>
+<span class="text-paper/50">© 2026</span>
+</div>
+<div class="flex items-center gap-6">
+<a class="transition hover:text-paper" href="#benefits">Возможности</a>
+<a class="transition hover:text-paper" href="#demo">Пример работы</a>
+<a class="transition hover:text-paper" href="#pricing">Тарифы</a>
+<a class="transition hover:text-paper" href="#faq">Вопросы</a>
+<a class="transition hover:text-paper" href="/privacy.html">Конфиденциальность</a>
+</div>
+</div>
+</footer>
+<!-- ===================================================================== -->
+<!-- МОДАЛЬНОЕ ОКНО (В ЕДИНОЙ ТЁПЛОЙ ПАЛИТРЕ САЙТА)                        -->
+<!-- ===================================================================== -->
+<div aria-modal="true" class="fixed inset-0 z-50 hidden items-center justify-center bg-forest/70 p-4 backdrop-blur-sm" id="requestModal" role="dialog">
+<div class="modal-card w-full max-w-md rounded-2xl border border-line bg-paperCard p-6 text-ink shadow-2xl sm:p-7">
+<div class="flex items-start justify-between gap-4 border-b border-line pb-4">
+<div>
+<span class="text-[11px] font-bold uppercase tracking-[0.14em] text-terra">Прямая связь</span>
+<h3 class="mt-1 font-serif text-3xl font-semibold text-ink">Заявка на запуск</h3>
+</div>
+<button aria-label="Закрыть" class="rounded-lg p-1.5 text-inkMuted transition hover:bg-paperAlt hover:text-ink" onclick="closeRequestModal()" type="button">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+<form class="lead-form mt-5 space-y-4" id="modalLeadForm">
+<div aria-hidden="true" class="sr-only">
+<label>Не заполняйте это поле<input autocomplete="off" name="website" tabindex="-1" type="text"/></label>
+</div>
+<div>
+<label class="mb-1.5 block text-xs font-semibold text-ink" for="lead-field-6">Ваше имя *</label>
+<input class="w-full rounded-lg border border-line bg-paper px-4 py-3 text-sm text-ink placeholder-inkMuted/60 focus:border-terra focus:outline-none" id="lead-field-6" name="name" placeholder="Дмитрий" required="" type="text"/>
+</div>
+<div>
+<label class="mb-1.5 block text-xs font-semibold text-ink" for="lead-field-7">Telegram или телефон *</label>
+<input class="w-full rounded-lg border border-line bg-paper px-4 py-3 text-sm text-ink placeholder-inkMuted/60 focus:border-terra focus:outline-none" id="lead-field-7" name="contact" placeholder="@username или +7 999 000-00-00" required="" type="text"/>
+</div>
+<div>
+<label class="mb-1.5 block text-xs font-semibold text-ink" for="lead-field-8">Сфера бизнеса / ссылка на Авито *</label>
+<input class="w-full rounded-lg border border-line bg-paper px-4 py-3 text-sm text-ink placeholder-inkMuted/60 focus:border-terra focus:outline-none" id="lead-field-8" name="business" placeholder="СТО, ремонт, услуги..." required="" type="text"/>
+</div>
+<!-- Кастомный dropdown в модалке -->
+<div>
+<label class="mb-1.5 block text-xs font-semibold text-ink" for="lead-field-9">Выбранный формат</label>
+<div class="custom-dropdown relative" data-default="Тестовый запуск — по согласованию" data-open="false" id="modalTariffDropdown">
+<input id="lead-field-9" name="tariff" type="hidden" value="Тестовый запуск — по согласованию"/>
+<button class="dropdown-trigger flex w-full items-center justify-between gap-2 rounded-lg border border-line bg-paper px-4 py-3 text-left text-sm font-medium text-ink transition hover:border-ink/40" type="button">
+<span class="dropdown-label truncate">Тестовый запуск — по согласованию</span>
+<svg class="dropdown-chevron h-4 w-4 shrink-0 text-inkMuted transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+<div class="dropdown-menu absolute right-0 left-0 z-30 mt-2 overflow-hidden rounded-xl border border-line bg-paperCard p-1.5 shadow-xl">
+<button class="dropdown-option flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-medium text-ink transition hover:bg-paperAlt" data-value="Тестовый запуск — по согласованию" type="button">
+<span class="h-2 w-2 rounded-full bg-sage"></span>
+<span>Тестовый запуск — по согласованию</span>
+</button>
+<button class="dropdown-option flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-medium text-ink transition hover:bg-paperAlt" data-value="Стандарт (4 900 ₽ + 1 900 ₽/мес)" type="button">
+<span class="h-2 w-2 rounded-full bg-terra"></span>
+<span>Стандарт (4 900 ₽ + 1 900 ₽/мес)</span>
+</button>
+<button class="dropdown-option flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-medium text-ink transition hover:bg-paperAlt" data-value="Про (11 900 ₽ + 3 500 ₽/мес)" type="button">
+<span class="h-2 w-2 rounded-full bg-forest"></span>
+<span>Про (11 900 ₽ + 3 500 ₽/мес)</span>
+</button>
+<button class="dropdown-option flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-medium text-ink transition hover:bg-paperAlt" data-value="По договорённости (индивидуально)" type="button">
+<span class="h-2 w-2 rounded-full bg-[#B5823A]"></span>
+<span>По договорённости (свой бюджет)</span>
+</button>
+</div>
+</div>
+</div>
+<div>
+<label class="mb-1.5 block text-xs font-semibold text-ink" for="lead-field-10">Ожидаемый бюджет (по желанию)</label>
+<input class="w-full rounded-lg border border-line bg-paper px-4 py-3 text-sm text-ink placeholder-inkMuted/60 focus:border-terra focus:outline-none" id="lead-field-10" name="budget" placeholder="Например: до 5 000 ₽ или сначала тест" type="text"/>
+</div>
+<label class="flex items-start gap-2.5 text-xs leading-relaxed text-inkMuted">
+<input class="mt-0.5 h-4 w-4 shrink-0 accent-[#A95A40]" name="consent" required="" type="checkbox"/>
+<span>Согласен(на) на обработку данных для ответа на обращение. <a class="underline underline-offset-2 hover:text-ink" href="/privacy.html" rel="noopener" target="_blank">Политика конфиденциальности</a>.</span>
+</label>
+<button class="submit-btn w-full rounded-lg bg-terra px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-terraDark disabled:opacity-60" type="submit">
+          Отправить заявку
+        </button>
+<div class="form-feedback hidden rounded-lg border p-3 text-xs leading-relaxed"></div>
+</form>
+</div>
+</div>
+<!-- Toast-уведомления -->
+<div class="pointer-events-none fixed right-4 bottom-4 z-50 flex max-w-xs flex-col gap-2" id="toastRoot"></div>
+<!-- ===================================================================== -->
+<!-- JAVASCRIPT                                                            -->
+<!-- ===================================================================== -->
+<script>
+    // Секреты Telegram находятся только на сервере. Браузер обращается к /api/leads.
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function timeHM() {
+      return new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function showToast(title, text, isError = false) {
+      const root = document.getElementById('toastRoot');
+      const el = document.createElement('div');
+      el.className = `pointer-events-auto rounded-xl border ${
+        isError ? 'border-terra bg-forest' : 'border-forestLine bg-forest'
+      } p-4 text-paper shadow-xl transition-opacity duration-300`;
+      el.innerHTML = `
+        <div class="text-xs font-bold ${isError ? 'text-[#F4B8A1]' : 'text-[#9EC7B5]'}">${escapeHtml(title)}</div>
+        <div class="mt-1 text-xs text-paper/80">${escapeHtml(text)}</div>
+      `;
+      root.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 300);
+      }, 4200);
+    }
+
+    // --- Мобильное меню ---
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    mobileMenuBtn.setAttribute('aria-expanded', 'false');
+    mobileMenuBtn.addEventListener('click', () => {
+      const isOpening = mobileMenu.classList.contains('hidden');
+      mobileMenu.classList.toggle('hidden');
+      mobileMenuBtn.setAttribute('aria-expanded', String(isOpening));
+    });
+    document.querySelectorAll('.mobile-nav-link').forEach((link) => {
+      link.addEventListener('click', () => { mobileMenu.classList.add('hidden'); mobileMenuBtn.setAttribute('aria-expanded', 'false'); });
+    });
+
+    // =========================================================================
+    // КАСТОМНЫЕ АНИМИРОВАННЫЕ DROPDOWN-МЕНЮ
+    // =========================================================================
+    function closeAllDropdowns(exceptEl = null) {
+      document.querySelectorAll('.custom-dropdown').forEach((dd) => {
+        if (dd !== exceptEl) dd.setAttribute('data-open', 'false');
+      });
+    }
+
+    document.querySelectorAll('.custom-dropdown').forEach((dropdown) => {
+      const trigger = dropdown.querySelector('.dropdown-trigger');
+      const options = dropdown.querySelectorAll('.dropdown-option');
+      const hiddenInput = dropdown.querySelector('input[type="hidden"]');
+      const labelEl = dropdown.querySelector('.dropdown-label');
+
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = dropdown.getAttribute('data-open') === 'true';
+        closeAllDropdowns(dropdown);
+        dropdown.setAttribute('data-open', isOpen ? 'false' : 'true');
+      });
+
+      options.forEach((opt) => {
+        opt.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const val = opt.getAttribute('data-value');
+
+          if (dropdown.id === 'nicheDropdown') {
+            const title = opt.getAttribute('data-title');
+            const sub = opt.getAttribute('data-sub');
+            const iconSpan = opt.querySelector('span');
+
+            document.getElementById('nicheSelectedTitle').textContent = title;
+            document.getElementById('nicheSelectedSub').textContent = sub;
+            const targetIcon = document.getElementById('nicheSelectedIcon');
+            targetIcon.innerHTML = iconSpan.innerHTML;
+            targetIcon.className = iconSpan.className;
+
+            initScenario(val);
+          } else {
+            if (hiddenInput) hiddenInput.value = val;
+            if (labelEl) labelEl.textContent = val;
+          }
+
+          dropdown.setAttribute('data-open', 'false');
+        });
+      });
+    });
+
+    document.addEventListener('click', () => closeAllDropdowns());
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeAllDropdowns();
+        if (!requestModal.classList.contains('hidden')) closeRequestModal();
+      }
+    });
+
+    // --- Модальное окно ---
+    const requestModal = document.getElementById('requestModal');
+    const modalTariffDropdown = document.getElementById('modalTariffDropdown');
+
+    function openRequestModal(tariffValue) {
+      if (tariffValue && modalTariffDropdown) {
+        const input = modalTariffDropdown.querySelector('input[type="hidden"]');
+        const label = modalTariffDropdown.querySelector('.dropdown-label');
+        if (input) input.value = tariffValue;
+        if (label) label.textContent = tariffValue;
+      }
+      requestModal.classList.remove('hidden');
+      requestModal.classList.add('flex');
+    }
+
+    function closeRequestModal() {
+      requestModal.classList.add('hidden');
+      requestModal.classList.remove('flex');
+    }
+
+    requestModal.addEventListener('click', (e) => {
+      if (e.target === requestModal) closeRequestModal();
+    });
+
+    // --- FAQ Аккордеон ---
+    document.querySelectorAll('.faq-toggle').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.faq-item');
+        const isOpen = item.getAttribute('data-open') === 'true';
+        item.setAttribute('data-open', isOpen ? 'false' : 'true');
+      });
+    });
+
+    // =========================================================================
+    // ДЕМОНСТРАЦИОННЫЙ СЦЕНАРИЙ (3 СФЕРЫ)
+    // =========================================================================
+    const SANDBOX_DATA = {
+      auto: {
+        tag: 'Авито',
+        channelName: 'Авито Чат',
+        title: 'СТО «АвтоМастер»',
+        client: 'Алексей (Skoda Octavia)',
+        defaultSummary: 'Уточняет цену ТО и диагностики ходовой',
+        defaultEstimate: 'от 6 500 ₽',
+        greeting:
+          'Здравствуйте! Автосервис «АвтоМастер». Подскажите марку автомобиля и какие работы нужны — помогу уточнить ориентир по цене и доступное время.',
+        presets: [
+          {
+            text: 'Сколько стоит ТО + диагностика?',
+            reply:
+              'Полное ТО (масло + фильтры) — от 4 800 ₽, диагностика ходовой при ТО бесплатно. На какой день вам удобно заехать?',
+            summary: 'Полное ТО + диагностика ходовой',
+            estimate: '6 500 – 9 000 ₽',
+          },
+          {
+            text: 'Есть окно завтра вечером?',
+            reply:
+              'В демонстрационном сценарии показаны два условных временных окна. Напишите номер телефона — проверю возможность записи и пришлю адрес.',
+            summary: 'Запись на ТО (завтра 18:30–19:30)',
+            estimate: 'от 6 500 ₽',
+          },
+          {
+            text: 'Запишите, +7 000 000-00-01',
+            reply:
+              'В демонстрационном примере контакт зафиксирован и добавлен в карточку обращения.',
+            summary: 'Подтверждённая запись на ТО (завтра 18:30)',
+            estimate: 'от 6 500 ₽',
+            phone: '+7 000 000-00-01',
+          },
+        ],
+      },
+      repair: {
+        tag: 'Telegram',
+        channelName: 'Telegram Бот',
+        title: 'СК «Ровный Дом»',
+        client: 'Елена (54 м²)',
+        defaultSummary: 'Интересуется ремонтом 2-к новостройки',
+        defaultEstimate: 'от 650 000 ₽',
+        greeting:
+          'Добрый день! «Ровный Дом» — ремонт квартир по договору. Подскажите площадь и тип жилья (новостройка/вторичка), чтобы дать ориентир по смете.',
+        presets: [
+          {
+            text: 'Новостройка 54 м², какая цена?',
+            reply:
+              'Капитальный ремонт под ключ с черновыми материалами — от 12 000 ₽/м². Точную смету инженер считает бесплатно на объекте. В каком ЖК квартира?',
+            summary: 'Капитальный ремонт, новостройка 54 м²',
+            estimate: '650 000 – 850 000 ₽',
+          },
+          {
+            text: 'Можно вызвать замерщика в сб?',
+            reply:
+              'Да, в субботу инженер свободен с 11:00 до 15:00. Оставьте номер телефона, чтобы согласовать удобный час и адрес.',
+            summary: 'Выезд инженера на замер в субботу',
+            estimate: 'от 650 000 ₽',
+          },
+          {
+            text: 'Оставляю контакт для связи',
+            reply:
+              'Зафиксировал +7 000 000-00-02. Передал главному инженеру — он свяжется с вами в ближайшее время и подтвердит выезд.',
+            summary: 'Подтверждённый выезд на замер (54 м²)',
+            estimate: '650 000 – 850 000 ₽',
+            phone: '+7 000 000-00-02',
+          },
+        ],
+      },
+      furniture: {
+        tag: 'ВКонтакте',
+        channelName: 'Сообщество ВК',
+        title: 'Фабрика «НордМебель»',
+        client: 'Михаил',
+        defaultSummary: 'Подбирает угловой диван с доставкой',
+        defaultEstimate: '48 900 ₽',
+        greeting:
+          'Здравствуйте! Фабрика «НордМебель». Подскажу наличие моделей на складе, ткани и сроки доставки по городу. Какой диван присмотрели?',
+        presets: [
+          {
+            text: 'Диван Берген есть в наличии?',
+            reply:
+              'Да, «Берген» в сером и бежевом велюре есть на складе — 48 900 ₽. Доставим и соберём за 2 дня. Подсказать размеры спального места?',
+            summary: 'Диван «Берген» (проверка наличия)',
+            estimate: '48 900 ₽',
+          },
+          {
+            text: 'Сколько доставка и подъём?',
+            reply:
+              'Доставка по городу — 1 500 ₽, подъём на грузовом лифте и сборка по условиям демонстрационного примера. Оставьте телефон, если нужно забронировать цвет.',
+            summary: 'Диван «Берген» + доставка по городу',
+            estimate: '50 400 ₽',
+          },
+          {
+            text: 'Беру серый, свяжитесь со мной',
+            reply:
+              'Отлично! В примере выбран серый велюр и передал номер +7 000 000-00-03 в отдел доставки — свяжутся для уточнения.',
+            summary: 'Бронь дивана «Берген» (серый велюр)',
+            estimate: '50 400 ₽',
+            phone: '+7 000 000-00-03',
+          },
+        ],
+      },
+    };
+
+    let activeKey = 'auto';
+    let sandboxBusy = false;
+
+    const sandboxMessages = document.getElementById('sandboxMessages');
+    const sandboxPresets = document.getElementById('sandboxPresets');
+    const sandboxForm = document.getElementById('sandboxForm');
+    const sandboxInput = document.getElementById('sandboxInput');
+    const resetSandboxBtn = document.getElementById('resetSandboxBtn');
+
+    const chatTag = document.getElementById('chatTag');
+    const chatTitle = document.getElementById('chatTitle');
+    const leadCardBox = document.getElementById('leadCardBox');
+    const leadStateBadge = document.getElementById('leadStateBadge');
+    const outChannel = document.getElementById('outChannel');
+    const outClient = document.getElementById('outClient');
+    const outSummary = document.getElementById('outSummary');
+    const outEstimate = document.getElementById('outEstimate');
+    const outPhone = document.getElementById('outPhone');
+
+    function addBubble(text, sender) {
+      const wrap = document.createElement('div');
+      wrap.className =
+        sender === 'user'
+          ? 'flex max-w-[85%] flex-col gap-1 self-end'
+          : 'flex max-w-[85%] flex-col gap-1 self-start';
+
+      const style =
+        sender === 'user'
+          ? 'rounded-xl rounded-tr-sm bg-terra px-4 py-3 text-sm leading-relaxed text-white'
+          : 'rounded-xl rounded-tl-sm border border-forestLine bg-forest px-4 py-3 text-sm leading-relaxed text-paper/95';
+
+      wrap.innerHTML = `
+        <div class="${style}">${escapeHtml(text)}</div>
+        <span class="text-[11px] text-paper/45 ${sender === 'user' ? 'text-right' : 'text-left'}">
+          ${sender === 'user' ? 'Покупатель' : 'Отклик.Про'} · ${timeHM()}
+        </span>
+      `;
+      sandboxMessages.appendChild(wrap);
+      sandboxMessages.scrollTop = sandboxMessages.scrollHeight;
+    }
+
+    function addTyping() {
+      const el = document.createElement('div');
+      el.id = 'sandboxTyping';
+      el.className = 'inline-flex items-center gap-1.5 self-start rounded-xl border border-forestLine bg-forest px-3.5 py-2.5 text-xs text-paper/60';
+      el.innerHTML = `
+        <span>печатает</span>
+        <span class="dot-pulse-1 h-1.5 w-1.5 rounded-full bg-[#E6A48B]"></span>
+        <span class="dot-pulse-2 h-1.5 w-1.5 rounded-full bg-[#E6A48B]"></span>
+        <span class="dot-pulse-3 h-1.5 w-1.5 rounded-full bg-[#E6A48B]"></span>
+      `;
+      sandboxMessages.appendChild(el);
+      sandboxMessages.scrollTop = sandboxMessages.scrollHeight;
+    }
+
+    function removeTyping() {
+      const el = document.getElementById('sandboxTyping');
+      if (el) el.remove();
+    }
+
+    function updateLeadCard(summary, estimate, phone = null) {
+      outSummary.textContent = summary;
+      outEstimate.textContent = estimate;
+      if (phone) {
+        outPhone.textContent = phone;
+        outPhone.className = 'text-right font-bold text-[#9EC7B5]';
+        leadStateBadge.textContent = 'Контакт указан в примере';
+        leadStateBadge.className = 'rounded-md bg-[#9EC7B5]/20 px-2.5 py-1 text-[11px] font-semibold text-[#9EC7B5]';
+        leadCardBox.classList.remove('border-forestLine');
+        leadCardBox.classList.add('border-[#9EC7B5]/60');
+      } else {
+        outPhone.textContent = 'ожидается...';
+        outPhone.className = 'text-right font-bold text-paper/45';
+        leadStateBadge.textContent = 'Диалог идёт';
+        leadStateBadge.className = 'rounded-md bg-forest px-2.5 py-1 text-[11px] font-semibold text-paper/75';
+        leadCardBox.classList.remove('border-[#9EC7B5]/60');
+        leadCardBox.classList.add('border-forestLine');
+      }
+    }
+
+    function initScenario(key) {
+      activeKey = key;
+      sandboxBusy = false;
+      const sc = SANDBOX_DATA[key];
+
+      chatTag.textContent = sc.tag;
+      chatTitle.textContent = sc.title;
+      outChannel.textContent = sc.channelName;
+      outClient.textContent = sc.client;
+
+      sandboxMessages.innerHTML = '';
+      addBubble(sc.greeting, 'bot');
+      updateLeadCard(sc.defaultSummary, sc.defaultEstimate, null);
+
+      sandboxPresets.innerHTML = '';
+      sc.presets.forEach((p) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = p.phone
+          ? 'rounded-lg border border-[#9EC7B5]/40 bg-[#9EC7B5]/15 px-3 py-2 text-xs font-semibold text-[#CBE6DA] transition hover:bg-[#9EC7B5]/25 active:scale-95'
+          : 'rounded-lg border border-forestLine bg-forest px-3 py-2 text-xs font-medium text-paper/85 transition hover:border-terra hover:text-paper active:scale-95';
+        b.textContent = p.text;
+        b.addEventListener('click', () => {
+          if (sandboxBusy) return;
+          sandboxBusy = true;
+          addBubble(p.text, 'user');
+          addTyping();
+          setTimeout(() => {
+            removeTyping();
+            addBubble(p.reply, 'bot');
+            updateLeadCard(p.summary, p.estimate, p.phone || null);
+            sandboxBusy = false;
+          }, 550);
+        });
+        sandboxPresets.appendChild(b);
+      });
+    }
+
+    sandboxForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const val = sandboxInput.value.trim();
+      if (!val || sandboxBusy) return;
+      sandboxInput.value = '';
+      sandboxBusy = true;
+
+      addBubble(val, 'user');
+      addTyping();
+
+      const phoneMatch = val.match(/(\+?\d[\d\s\-\(\)]{6,}\d)/);
+      setTimeout(() => {
+        removeTyping();
+        if (phoneMatch) {
+          const phone = phoneMatch[0].trim();
+          addBubble(
+            `Спасибо! Номер ${phone} записал и зафиксировал для примера — с вами свяжется ответственный специалист.`,
+            'bot'
+          );
+          updateLeadCard(outSummary.textContent, outEstimate.textContent, phone);
+        } else {
+          addBubble(
+            'Понял задачу. Подскажу точную сумму по прайсу — напишите номер телефона, чтобы закрепить за вами удобное время.',
+            'bot'
+          );
+          updateLeadCard(`Вопрос клиента: «${val.slice(0, 60)}»`, outEstimate.textContent, null);
+        }
+        sandboxBusy = false;
+      }, 600);
+    });
+
+    resetSandboxBtn.addEventListener('click', () => initScenario(activeKey));
+    initScenario('auto');
+
+
+    // =========================================================================
+    // ОТПРАВКА ЗАЯВОК ЧЕРЕЗ СЕРВЕРНЫЙ API
+    // =========================================================================
+    function resetCustomDropdownsInForm(form) {
+      form.querySelectorAll('.custom-dropdown').forEach((dd) => {
+        const def = dd.getAttribute('data-default');
+        if (!def) return;
+        const input = dd.querySelector('input[type="hidden"]');
+        const label = dd.querySelector('.dropdown-label');
+        if (input) input.value = def;
+        if (label) label.textContent = def;
+      });
+    }
+
+    document.querySelectorAll('.lead-form').forEach((form) => {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(form);
+        const payload = {
+          name: String(fd.get('name') || '').trim(),
+          contact: String(fd.get('contact') || '').trim(),
+          business: String(fd.get('business') || '').trim(),
+          tariff: String(fd.get('tariff') || '').trim(),
+          budget: String(fd.get('budget') || '').trim(),
+          website: String(fd.get('website') || '').trim(),
+          consent: fd.get('consent') === 'on'
+        };
+
+        const btn = form.querySelector('button[type="submit"]');
+        const feedback = form.querySelector('.form-feedback');
+        if (!payload.name || !payload.contact || !payload.business || !payload.consent) {
+          showToast('Проверьте форму', 'Заполните обязательные поля и подтвердите согласие.', true);
+          return;
+        }
+
+        const prevText = btn ? btn.textContent : '';
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = 'Отправляем…';
+        }
+        if (feedback) feedback.classList.add('hidden');
+
+        try {
+          const res = await fetch('/api/leads', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            credentials: 'same-origin'
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.ok) {
+            throw new Error(data.message || 'Не удалось отправить заявку. Попробуйте позже.');
+          }
+
+          if (feedback) {
+            feedback.className = 'form-feedback rounded-lg border border-sage/40 bg-[#EDF3EE] p-3.5 text-xs text-forest';
+            feedback.textContent = 'Заявка отправлена. Ответим по указанному контакту.';
+          }
+          showToast('Заявка отправлена', 'Данные переданы ответственному специалисту.');
+          form.reset();
+          resetCustomDropdownsInForm(form);
+        } catch (err) {
+          if (feedback) {
+            feedback.className = 'form-feedback rounded-lg border border-terra/40 bg-[#FBF1EC] p-3.5 text-xs text-ink';
+            feedback.textContent = err.message;
+          }
+          showToast('Не удалось отправить', err.message, true);
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = prevText;
+          }
+        }
+      });
+    });
+
+  </script>
+</body>
+</html>
